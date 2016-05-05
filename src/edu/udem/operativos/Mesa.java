@@ -1,108 +1,78 @@
 package edu.udem.operativos;
 
+import java.util.LinkedList;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadLocalRandom;
 
-public class Mesa {
+/**
+ * Created by Ismael on 05/05/2016.
+ */
+public class Mesa extends Thread {
+    //la mesa se encarga de manejar a los fumadores
+    //es una mesa muy lista y que sabe de Dijkstra
 
-	
-	Semaphore turnoCerillo;
-	Semaphore turnoTabaco;
-	Semaphore turnoPapel;
-	Fumador fumador1;
-	Fumador fumador2;
-	Fumador fumador3;
-	boolean fumando=false;
-	
-	boolean nuevosIngredientes;
-	
-	String ing1;
-	String ing2;
-	
-	public Mesa()
-	
-	{
-		// TODO Auto-generated constructor stub
-		
-		this.turnoCerillo=new Semaphore(1);
-		this.turnoTabaco=new Semaphore(1);
-		this.turnoPapel=new Semaphore(1);
-		
-		fumador1=new Fumador("tabaco", this);
-		fumador2=new Fumador("cerillo", this);
-		fumador3=new Fumador("papel", this);
-		
-		fumador1.start();
-		fumador2.start();
-		fumador3.start();
-		
-	}
-	
-		
-	public void tieneTabaco() throws InterruptedException
-	{
-		turnoTabaco.acquire();
-		
-		//tomar cerillo
-		//Tomar papel
-		System.out.print("fumador con "+fumador1.ingrediente);
-		fumador1.fumar() ;
-		//Regresar ingrediente a la mesa
-		
-		
-	}
-	
-	public void tieneCerillo() throws InterruptedException
-	{
-		turnoCerillo.acquire();
-		fumador2.fumar();
-		System.out.print("fumador con "+fumador2.ingrediente);
-		
-	}
-	
-	
-	public void tienePapel() throws InterruptedException
-	{
-		turnoPapel.acquire();
-		fumador3.fumar();
-		System.out.print("fumador con "+fumador3.ingrediente);
-	}
-	
-	public void nuevosIngredientes(int ing1, int ing2)
-	{
-		//1 tabaco
-		//2 cerillo
-		//3 papel
-		
-		if (ing1==1 && ing2==2) 
-			 
-		{
-			turnoPapel.release();
-		}
-		else
-			if (ing1==2 && ing2==3) 
-				 
-			{
-				turnoTabaco.release();
-			}
-			else
-				turnoCerillo.release();
-		
-	}
-		
-		
-		
-		
-		
-		
+    //semáforos
+    public Semaphore semFumados = new Semaphore(0);
+    public Semaphore semIngredientes = new Semaphore(0);
+    //el latch es un semáforo que ejecuta sus hilos bloqueados simultáneamente.
+    //lo hacemos para que la mesa espere hasta que todos los fumadores estén
+    //listos.
+    public CountDownLatch latch;
+    //tiene su semáforo para que no haya lios al cambiarlo
+    public Semaphore semDaleAlLatch = new Semaphore(0);
 
-	
-	
+    public LinkedList<String> ingredientesOfrecidos;
 
-	
-	
-	
-	
-	
+    public Mesa(){
+        this.ingredientesOfrecidos = new LinkedList<>();
+    }
+
+    public void run() {
+        Random random = new Random();
+        int ingredientes_actuales;
+
+        latch = new CountDownLatch(3); //tres fumadores
+        semDaleAlLatch.release(3);
+        //esperamos a que los fumadores estén listos
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        //ponemos cosas en la mesa
+        ingredientes_actuales = random.nextInt(3);
+        switch (ingredientes_actuales) {
+            case 0: //falta papel
+                ingredientesOfrecidos.addLast("Tabaco");
+                ingredientesOfrecidos.addLast("Mechero");
+                break;
+            case 1: //falta tabaco
+                ingredientesOfrecidos.addLast("Papel");
+                ingredientesOfrecidos.addLast("Mechero");
+                break;
+            case 2: //falta mechero
+                ingredientesOfrecidos.addLast("Tabaco");
+                ingredientesOfrecidos.addLast("Papel");
+                break;
+        }
+        System.out.print("Ingredientes en la mesa: ");
+        for (String ing : ingredientesOfrecidos) {
+            System.out.print(ing + " ");
+        }
+        System.out.print("\n");
+        //soltamos los ingredientes
+        semIngredientes.release(3);
+        //esperamos a los fumadores
+        try {
+            semFumados.acquire(3);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+
+    }
+
 
 }
