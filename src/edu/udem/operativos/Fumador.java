@@ -56,9 +56,8 @@ public class Fumador extends Thread {
         }
         //si me faltan los dos ingredientes en la mesa, puedo fumar
         if(ingComunes == 2){
-            System.out.println("Puedo fumar! Yo tengo " + ingrediente);
-            System.out.println(":D");
-        }
+            System.out.println("Tengo " + ingrediente + ". Yo puedo fumar! :D");
+        }else System.out.println("Tengo " + ingrediente + ". Yo no puedo fumar :(");
         mesa.semFumados.release();
 
 
